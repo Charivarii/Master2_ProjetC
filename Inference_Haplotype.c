@@ -1,6 +1,21 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
+/*
+ *##### STRUCTURES #####
+ */
+typedef struct TypeIndividu* TypeFichier;
+
+typedef struct TypeIndividu {
+    char* nomIndividu;
+    int* genotype;
+    TypeFichier suiv;
+} TypeIndividu;
+
+/*
+ *##### FONCTIONS #####
+ */
 void recupererParametres(int nbArgument, char* listeArguments[], char** adr_fichier, char** adr_nbIndividu, char** adr_tailleGeno) {
     if (nbArgument != 4) {
         printf("Au lancement du programme, vous devez rentrer 3 paramètres : \n");
@@ -16,24 +31,16 @@ void recupererParametres(int nbArgument, char* listeArguments[], char** adr_fich
     }
 }
 
-//***************************************************************
-int main(int argc, char* argv[]) {
-    //VARIABLE
-    FILE* fp = NULL;
-    char c;
+void recupererDonneesFichier(TypeFichier tete, int tailleGeno, int nbIndividu, char* fichier) {
+    // Variables globales
     int i = 0;
     int j = 0;
-    char tab[20][20];
-    char* fichier;
-    char* nbIndividu;
-    char* tailleGeno;
+    int estNomIndividu = 1;
+    FILE* fp = NULL;
+    char c[1];
+    TypeFichier ptr;
 
-    //DEBUT
-
-    // Récupération des paramètres
-    recupererParametres(argc, argv, &fichier, &nbIndividu, &tailleGeno);
-
-
+    // Ouverture et lecture du fichier
     fp = fopen(fichier, "r");
  
     if (fp == NULL) {
@@ -41,23 +48,80 @@ int main(int argc, char* argv[]) {
         exit(1);
     } else {
         printf("Le fichier %s existe\n", fichier);
+
+        ptr = tete;
+        ptr -> nomIndividu = (char*)malloc(sizeof(char)*20);
+        ptr -> genotype = (int*)malloc(tailleGeno*sizeof(int));
+        ptr -> suiv = NULL;
+
         do {
-            c = getc(fp);
-            if (c == '\n') {
-                j = -1;
+            c[0] = getc(fp);
+            if (c[0] == '\n' && i != (nbIndividu - 1)) {
+                ptr -> suiv = (TypeFichier)malloc(sizeof(TypeIndividu));
+                ptr = ptr -> suiv;
+                ptr -> nomIndividu = (char*)malloc(sizeof(char)*20);
+                ptr -> genotype = (int*)malloc(tailleGeno*sizeof(int));
+                ptr -> suiv = NULL;
                 i++;
+                estNomIndividu = 1;
+            } else if (c[0] == ' ') {
+                estNomIndividu = 0;
+                j = 0;
+            } else {
+                if (estNomIndividu) {   
+                    ptr -> nomIndividu = strcat(ptr -> nomIndividu, c);
+                } else {
+                    ptr -> genotype[j] = atoi(c);
+                    j++;
+                }
             }
-            
-            tab[i][j] = c;
-            j++;
-        } while (c != EOF);
+
+        } while (c[0] != EOF);
+    }
+}
+
+void afficherListe(TypeFichier tete, int tailleGeno) {
+    TypeFichier p;
+    int i;
+    p = tete;
+    while (p != NULL) {
+        printf("nom : %s\ngenotype : ", p->nomIndividu);
+        for (i=0; i<tailleGeno ; i++) {
+            printf("%d", p-> genotype[i]);
+        }
+        printf("\n*************\n");
+        p=p->suiv;
+    }
+}
+
+/*
+ *##### MAIN #####
+ */
+int main(int argc, char* argv[]) {
+    //VARIABLE
+    char* fichier;
+    char* nbIndividu;
+    char* tailleGeno;
+    TypeFichier ptrFichier;
+
+    //DEBUT
+
+    // Récupération des paramètres
+    recupererParametres(argc, argv, &fichier, &nbIndividu, &tailleGeno);
+
+    // Récupération des données présentes dans le fichier
+    // On alloue de la mémoire à la première structure de la liste puis on vérifie si l'allocation à fonctionnée
+    ptrFichier = (TypeFichier)malloc(sizeof(TypeIndividu));
+
+    if(ptrFichier==NULL){
+        printf("L'allocation mémoire a échoué\n");
+        exit(1);
     }
 
-    for (i=0 ; i<20 ; i++) {
-        for (j=0 ; j<20 ; j++) {
-            printf("i : %d - j : %d - c : %c\n", i, j, tab[i][j]);
-        }
-    }
+    recupererDonneesFichier(ptrFichier, atoi(tailleGeno), atoi(nbIndividu), fichier);
+    
+    // Afficher les données présentes dans le fichier
+    afficherListe(ptrFichier, atoi(tailleGeno));
 
     return 0;
 }
