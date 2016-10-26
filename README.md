@@ -15,7 +15,7 @@
 - Compilation et lancement :
 ----------------------------
 
-gcc -o Inference_Haplotype Inference_Haplotype.c
+gcc -o Inference_Haplotype Inference_Haplotype.c -lm
 ./Inference_Haplotype <fichier> <nombreIndividus> <tailleGenotype>
 
 <fichier> - nom du fichier contenant les individus et leur génotype sous le format ci-dessous : 
