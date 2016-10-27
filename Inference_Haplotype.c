@@ -156,7 +156,7 @@ void afficherListe(TypeFichier tete, int tailleGeno) {
 }
 
 
-void predictionEspaceRestraintHaplotypes(TypeFichier tete, int tailleGeno, int nbIndividu, TypeListeHaplotypes ptrListeHaplo) {
+int predictionEspaceRestraintHaplotypes(TypeFichier tete, int tailleGeno, int nbIndividu, TypeListeHaplotypes ptrListeHaplo) {
 
 	printf("############################################\n");
 	printf("Début de la fonction predictionEspaceRestraintHaplotypes\n");
@@ -188,11 +188,11 @@ void predictionEspaceRestraintHaplotypes(TypeFichier tete, int tailleGeno, int n
     pfic = tete;
     
     // Initialisation de la liste qui contiendra tous les haplotypes explicatifs
-    ptrListeHaplo = (TypeHaplotype*)malloc(sizeof(TypeHaplotype));
-        ptrListeHaplo -> haplotype = (int*)malloc(sizeof(int)*tailleGeno);
-        ptrListeHaplo -> teteGenosExplicatifs = (TypeGenoExplicatif*)malloc(sizeof(TypeGenoExplicatif));
-        ptrListeHaplo -> suiv = NULL;
         pHaplo = ptrListeHaplo;
+        pHaplo -> haplotype = (int*)malloc(sizeof(int)*tailleGeno);
+        pHaplo -> freq = 0.0;
+        pHaplo -> teteGenosExplicatifs = (TypeGenoExplicatif*)malloc(sizeof(TypeGenoExplicatif));
+        pHaplo -> suiv = NULL;
     
     while (pfic != NULL) { // Pour chaque individu
         // On compte le nombre de 2 dans le génotype
@@ -265,6 +265,7 @@ void predictionEspaceRestraintHaplotypes(TypeFichier tete, int tailleGeno, int n
         		pHaplo -> suiv = (TypeHaplotype*)malloc(sizeof(TypeHaplotype));
         		pHaplo = pHaplo -> suiv;
         		pHaplo -> haplotype = (int*)malloc(sizeof(int)*tailleGeno);
+        		pHaplo -> freq = 0.0;
         		pHaplo -> teteGenosExplicatifs = (TypeGenoExplicatif*)malloc(sizeof(TypeGenoExplicatif));
         		pHaplo -> suiv = NULL;
         	}
@@ -294,19 +295,42 @@ void predictionEspaceRestraintHaplotypes(TypeFichier tete, int tailleGeno, int n
     }
     free(tabTemp); 
 	
+	return nbHaploTotaux;
+    //FIN
+}
+
+
+void initialisation_freq_haplotype (TypeListeHaplotypes tete, int nb_haplo, int tailleGeno){
+	
+    // Variables locales
+	double freqCalc;
+	int i;
+	TypeListeHaplotypes p;
+
+    //DEBUT
+    p = tete;
+	freqCalc=(1.0/nb_haplo);
+	//parcour de la liste des haplotype 
+	while(p != NULL ){
+		//on rempli la valeur de la frequence
+		p -> freq = freqCalc;
+		p = p -> suiv;
+	}	
 	// Affichage de la liste des haplotypes explicatifs
+	printf("\n*************\n");
 	printf("Affichage de la liste des haplotypes\n");
-	pHaplo = ptrListeHaplo;
-	while (pHaplo != NULL) {
-		printf("numHaplo : %d\n", pHaplo->numHaplo);
+	printf("\n*************\n");
+	p = tete;
+	while (p != NULL) {
+		printf("numHaplo : %d\n", p->numHaplo);
 		for (i=0; i<tailleGeno ; i++) {
-			printf("%d", pHaplo -> haplotype[i]);
+			printf("%d", p -> haplotype[i]);
 		}
-		printf("\ncpt_haplo : %d\n", pHaplo->cpt_haplo);
+		printf("\ncpt_haplo : %d\n", p->cpt_haplo);
+		printf("freq : %le\n", p->freq);
 		printf("\n*************\n");
-		pHaplo=pHaplo->suiv;
+		p=p->suiv;
 	}
-	   	
     //FIN
 }
 
@@ -322,6 +346,7 @@ int main(int argc, char* argv[]) {
 	printf("############################################\n");
 
     //VARIABLE
+    int nbHaploTotaux;
     char* fichier;
     char* nbIndividu;
     char* tailleGeno;
@@ -349,9 +374,19 @@ int main(int argc, char* argv[]) {
     afficherListe(ptrFichier, atoi(tailleGeno));
 
     // Prédiction de l'espace restraint des haplotypes expliquant les génotypes
-    predictionEspaceRestraintHaplotypes(ptrFichier, atoi(tailleGeno), atoi(nbIndividu), ptrListeHaplo);
+    ptrListeHaplo = (TypeHaplotype*)malloc(sizeof(TypeHaplotype));
+    if(ptrListeHaplo==NULL){
+        printf("L'allocation mémoire a échoué\n");
+        exit(1);
+    }
+    
+    nbHaploTotaux = predictionEspaceRestraintHaplotypes(ptrFichier, atoi(tailleGeno), atoi(nbIndividu), ptrListeHaplo);
+    
+    // On ajoute dans la liste des haplotypes la fréquence initiale
+    initialisation_freq_haplotype(ptrListeHaplo, nbHaploTotaux, atoi(tailleGeno));
 
     free(ptrFichier);
+    free(ptrListeHaplo);
     return 0;
     // FIN
 }
