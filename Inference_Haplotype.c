@@ -49,9 +49,8 @@ typedef struct TypeHaplotype {
 
 void recupererParametres(int nbArgument, char* listeArguments[], char** adr_fichier, char** adr_nbIndividu, char** adr_tailleGeno) {
 		
-		printf("############################################\n");
-		printf("Début de la fonction recupererParametres\n");
-		printf("############################################\n");
+		printf("\nDébut de la fonction recupererParametres\n");
+		printf("############################################\n\n");
 		
     //DEBUT
     if (nbArgument != 4) {
@@ -72,9 +71,8 @@ void recupererParametres(int nbArgument, char* listeArguments[], char** adr_fich
 
 void recupererDonneesFichier(TypeFichier tete, int tailleGeno, int nbIndividu, char* fichier) {
 
-		printf("############################################\n");
-		printf("Début de la fonction recupererDonneesFichier\n");
-		printf("############################################\n");
+		printf("\nDébut de la fonction recupererDonneesFichier\n");
+		printf("############################################\n\n");
 
     // Variables locales
     int i = 0;
@@ -133,24 +131,23 @@ void recupererDonneesFichier(TypeFichier tete, int tailleGeno, int nbIndividu, c
 
 void afficherListe(TypeFichier tete, int tailleGeno) {
 
-	printf("############################################\n");
-	printf("Début de la fonction afficherListe\n");
-	printf("############################################\n");
+	printf("\nDébut de la fonction afficherListe\n");
+	printf("############################################\n\n");
 
     // Variables locales
     TypeFichier p;
     int i;
 
     //DEBUT
-    printf("\n*************\n");
     printf("Affichage de la liste contenant les génotypes de chaque individu\n");
+    printf("************************\n");
     p = tete;
     while (p != NULL) {
         printf("nom : %s\ngenotype : ", p->nomIndividu);
         for (i=0; i<tailleGeno ; i++) {
             printf("%d", p-> genotype[i]);
         }
-        printf("\n*************\n");
+        printf("\n************************\n");
         p=p->suiv;
     }
     //FIN
@@ -159,9 +156,8 @@ void afficherListe(TypeFichier tete, int tailleGeno) {
 
 int predictionEspaceRestraintHaplotypes(TypeFichier tete, int tailleGeno, int nbIndividu, TypeListeHaplotypes ptrListeHaplo) {
 
-	printf("############################################\n");
-	printf("Début de la fonction predictionEspaceRestraintHaplotypes\n");
-	printf("############################################\n");
+	printf("\nDébut de la fonction predictionEspaceRestraintHaplotypes\n");
+	printf("############################################\n\n");
 
     // Variables locales
     int i = 0;
@@ -248,6 +244,9 @@ int predictionEspaceRestraintHaplotypes(TypeFichier tete, int tailleGeno, int nb
         l = 0;
         g = nbHaploTotaux;
         l = (nbHaploTotaux + nbHaploExplicatif - 1);
+
+        printf("Affichage de la liste Paires d'haplotypes explicatifs\n");
+        printf("************************\n");
         for (i=0 ; i<(nbHaploExplicatif) ; i++) {
         	pPE = pfic -> tetePairesExplicatives;
     		pPE -> suiv = NULL;
@@ -283,19 +282,6 @@ int predictionEspaceRestraintHaplotypes(TypeFichier tete, int tailleGeno, int nb
         	
         	nbHaploTotaux++;
         }
-        
-        // On garde 
-        /*for (i=0 ; i<(nbHaploExplicatif/2) ; i++) {
-        	l = nbHaploExplicatif - 1;
-        	for (j=0 ; j<tailleGeno ; j++) {
-        		
-        			printf("tabTemp[j][i] : %d\n", tabTemp[j][i]);
-        			printf("tabTemp[j][l] : %d\n", tabTemp[j][l]);
-        	}
-        	l--;
-        	printf("\n");
-        }
-        printf("############################################\n");*/
 
         pfic = pfic -> suiv;
     }
@@ -311,7 +297,10 @@ int predictionEspaceRestraintHaplotypes(TypeFichier tete, int tailleGeno, int nb
 }
 
 
-void initialisation_freq_haplotype (TypeListeHaplotypes tete, int nb_haplo, int tailleGeno){
+void initialisation_freq_haplotype (TypeListeHaplotypes tete, int nb_haplo, int tailleGeno) {
+
+	printf("\nDébut de la fonction initialisation_freq_haplotype\n");
+	printf("############################################\n\n");
 	
     // Variables locales
 	double freqCalc;
@@ -328,9 +317,8 @@ void initialisation_freq_haplotype (TypeListeHaplotypes tete, int nb_haplo, int 
 		p = p -> suiv;
 	}	
 	// Affichage de la liste des haplotypes explicatifs
-	printf("\n*************\n");
 	printf("Affichage de la liste des haplotypes\n");
-	printf("\n*************\n");
+	printf("************************\n");
 	p = tete;
 	while (p != NULL) {
 		printf("numHaplo : %d\n", p->numHaplo);
@@ -339,8 +327,8 @@ void initialisation_freq_haplotype (TypeListeHaplotypes tete, int nb_haplo, int 
 		}
 		printf("\ncpt_haplo : %d\n", p->cpt_haplo);
 		printf("freq : %le\n", p->freq);
-		printf("\n*************\n");
 		p=p->suiv;
+		printf("************************\n");
 	}
 	
     //FIN
