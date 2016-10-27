@@ -28,6 +28,7 @@ typedef struct TypeGenoExplicatif* TypeListeGenosExplicatifs;
 
 typedef struct TypeGenoExplicatif {
     char* nomIndividu;
+    int numHaplo2;
     TypeListeGenosExplicatifs suiv;
 } TypeGenoExplicatif;
 
@@ -169,6 +170,7 @@ int predictionEspaceRestraintHaplotypes(TypeFichier tete, int tailleGeno, int nb
     int t = 0;
     int s = 0;
     int l = 0;
+    int g = 0;
     int nbHaploTotaux = 0;
     int pas = 0;
     int multiplicateur = 0;
@@ -177,6 +179,7 @@ int predictionEspaceRestraintHaplotypes(TypeFichier tete, int tailleGeno, int nb
     TypeFichier pfic;
     int** tabTemp;
     TypeListeHaplotypes pHaplo;
+    TypeListePairesExplicatives pPE;
 
     //DEBUT
     // Allocation mémoire initiale pour le tableau temporaire qui contiendra les paires d'haplotypes possibles permettant d'expliquer le génotype d'un individu
@@ -186,6 +189,8 @@ int predictionEspaceRestraintHaplotypes(TypeFichier tete, int tailleGeno, int nb
         }
     // Parcours de la liste pour récupérer les génotypes et prédire l'espace restaint des haplotypes
     pfic = tete;
+    pPE = pfic -> tetePairesExplicatives;
+    pPE -> suiv = NULL;
     
     // Initialisation de la liste qui contiendra tous les haplotypes explicatifs
         pHaplo = ptrListeHaplo;
@@ -212,6 +217,7 @@ int predictionEspaceRestraintHaplotypes(TypeFichier tete, int tailleGeno, int nb
         for (i=0 ; i<tailleGeno ; i++) {
             tabTemp[i] = (int*)realloc(tabTemp[i], sizeof(int)*nbHaploExplicatif);
         }
+        
         // Génération des paires d'haplotypes expliquant le génotype
         k = 0; // k : nombre de deux rencontrés jusqu'à maintenant
         for (i=0 ; i<tailleGeno ; i++) { // Parcours du génotype d'un individu
@@ -239,20 +245,24 @@ int predictionEspaceRestraintHaplotypes(TypeFichier tete, int tailleGeno, int nb
         		}
         	}
         }
-
-        // Affichage des haplotypes générés
-        /*for (i=0 ; i<nbHaploExplicatif ; i++) { // Parcours du génotype d'un individu
-        	printf("\n%d : \n", i);
-        	for (j=0 ; j<tailleGeno ; j++) {
-        			printf("%d", tabTemp[j][i]);
-        	}
-        	printf("\n");
-        }
-        printf("1############################################\n");*/
         
         // On garde les haplotypes dans une liste chainée TypeListeHaplotype
-        
+        l = 0;
+        g = nbHaploTotaux;
+        l = (nbHaploTotaux + nbHaploExplicatif - 1);
         for (i=0 ; i<(nbHaploExplicatif) ; i++) {
+        	if (i < (nbHaploExplicatif/2)) {
+        	    pPE -> numHaplo1 = i + g;
+        	    printf("pPE -> numHaplo1 : %d\n", pPE -> numHaplo1);
+        	    pPE -> numHaplo2 = l;
+        	    printf("pPE -> numHaplo2 : %d\n", pPE -> numHaplo2);
+        	    l--;
+        	    if (i != (nbHaploExplicatif/2 - 1)) {
+        	        pPE -> suiv = (TypePaireExplicative*)malloc(sizeof(TypePaireExplicative));
+        	        pPE = pPE -> suiv;
+        	        pPE -> suiv = NULL;
+        	    }
+        	}
         	
         	pHaplo -> numHaplo = nbHaploTotaux;
         	pHaplo -> cpt_haplo = 1;
@@ -272,8 +282,8 @@ int predictionEspaceRestraintHaplotypes(TypeFichier tete, int tailleGeno, int nb
         	
         	nbHaploTotaux++;
         }
-        printf("2############################################\n");
-          
+        
+        // On garde 
         /*for (i=0 ; i<(nbHaploExplicatif/2) ; i++) {
         	l = nbHaploExplicatif - 1;
         	for (j=0 ; j<tailleGeno ; j++) {
@@ -331,9 +341,9 @@ void initialisation_freq_haplotype (TypeListeHaplotypes tete, int nb_haplo, int 
 		printf("\n*************\n");
 		p=p->suiv;
 	}
+	
     //FIN
 }
-
 
 /*
  *##### MAIN #####
@@ -352,7 +362,6 @@ int main(int argc, char* argv[]) {
     char* tailleGeno;
     TypeFichier ptrFichier;
     TypeListeHaplotypes ptrListeHaplo;
-    TypeListePairesExplicatives ptrPairesExplicatives;
 
     //DEBUT
 
