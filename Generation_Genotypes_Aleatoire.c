@@ -2,6 +2,23 @@
 #include <stdlib.h>
 #include <string.h>
 
+void recupererParametres(int nbArgument, char* listeArguments[], char** adr_nbIndividu, char** adr_tailleGeno , char** adr_pc_ambigue) {
+
+    //DEBUT
+    if (nbArgument != 4) {
+        printf("Au lancement du programme, vous devez rentrer 3 paramètres : \n");
+        printf("- Le nombre d'individu souhaité\n");
+        printf("- La longueur du génotype voulu\n");   
+	printf("- Le pourcentage d'ambigue max : (0.5 max) \n");
+        printf("Merci\n");
+        exit(1);
+    } else {
+        *adr_nbIndividu = listeArguments[1];
+        *adr_tailleGeno = listeArguments[2];
+        *adr_pc_ambigue = listeArguments[3];
+    }
+    //FIN
+}
 
 void generation_haplotype(int nbInd, int tailleGeno, int nbAmbigue, int* haplo1, int* haplo2) {
     int i, j, k, l, nbDeux;
@@ -101,21 +118,28 @@ void ecriture_fichier_geno(int i, int tailleGeno, int* geno) {
 }
 
 
-int main() {
+int main(int argc, char* argv[]) {
     //déclaration des variables
-    int i, j;
-    int  nbInd, tailleGeno, nbAmbigue;
-    double pcAmbigue;
+    int i, j, nbAmbigue;
+    char*  nbIndC;
+    char* tailleGenoC;
+    char* pcAmbigueC;
+    int  nbInd, tailleGeno,pcAmbigue;
     int* haplo1;
     int* haplo2;
     int* geno;
 
-    printf("Nombre d'individu : ");
-    scanf("%d", &nbInd);
-    printf("Taille du genotype : ");
-    scanf("%d", &tailleGeno);
-    printf("Pourcentage d'ambigue max : (0.5 max) ");
-    scanf("%le", &pcAmbigue);
+    // Récupération des paramètres
+    recupererParametres(argc, argv, &nbIndC, &tailleGenoC, &pcAmbigueC);
+
+    //passage de char en int
+    nbInd=atoi(nbIndC);
+    tailleGeno=atoi(tailleGenoC);
+    pcAmbigue=atoi(pcAmbigueC);
+	
+printf("%d nb ind \n",nbInd);
+printf("%d taille geno \n",tailleGeno);
+printf("%d ambigue \n",pcAmbigue);
 
     //allocation dynamique de mémoire
     haplo1 =(int*)malloc(tailleGeno*sizeof(int));
@@ -132,11 +156,12 @@ int main() {
     remove ("geno.txt");
     remove ("geno_haplo.txt");
 
-    if (pcAmbigue > 0.50) {//verifier ambigue pas trop grand
+    if (pcAmbigue > 50) {//verifier ambigue pas trop grand
         printf("Pourcentage d'ambigue choisit trop grand");
         exit(1);
     } else {
-        nbAmbigue = pcAmbigue * tailleGeno;
+        nbAmbigue = (pcAmbigue * tailleGeno)/100;
+printf("%d nbambigue \n",nbAmbigue);
     }
     for (i = 0 ; i < nbInd ; i++) {
         generation_haplotype(nbInd, tailleGeno, nbAmbigue, haplo1, haplo2);
