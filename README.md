@@ -7,7 +7,18 @@
 ########################################################
 
 # Script Generation_Genotypes_Aleatoire.c
-------------------------------------------
+#########################################
+
+- Compilation et lancement :
+----------------------------
+
+gcc -o Generation_Genotypes_Aleatoire Generation_Genotypes_Aleatoire.c
+./Generation_Genotypes_Aleatoire <nombreIndividus> <tailleGenotype> <pourcentageDe2>
+
+<nombreIndividu> - nombre d'individu contenu dans le fichier
+<tailleGenotype> - taille des génotypes des individus
+<pourcentageDe2> - détermine le nombre de 2 dans la séquence (nombre d'hétérozygote)
+									 doit être inférieur à 0.5
 
 # Script Inference_Haplotype.c
 ##############################
