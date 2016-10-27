@@ -9,7 +9,7 @@ void recupererParametres(int nbArgument, char* listeArguments[], char** adr_nbIn
         printf("Au lancement du programme, vous devez rentrer 3 paramètres : \n");
         printf("- Le nombre d'individu souhaité\n");
         printf("- La longueur du génotype voulu\n");   
-	printf("- Le pourcentage d'ambigue max : (0.5 max) \n");
+				printf("- Le pourcentage d'ambigue max : (50 max) \n");
         printf("Merci\n");
         exit(1);
     } else {
