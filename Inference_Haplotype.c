@@ -189,8 +189,6 @@ int predictionEspaceRestraintHaplotypes(TypeFichier tete, int tailleGeno, int nb
         }
     // Parcours de la liste pour récupérer les génotypes et prédire l'espace restaint des haplotypes
     pfic = tete;
-    pPE = pfic -> tetePairesExplicatives;
-    pPE -> suiv = NULL;
     
     // Initialisation de la liste qui contiendra tous les haplotypes explicatifs
         pHaplo = ptrListeHaplo;
@@ -246,13 +244,16 @@ int predictionEspaceRestraintHaplotypes(TypeFichier tete, int tailleGeno, int nb
         	}
         }
         
-        // On garde les haplotypes dans une liste chainée TypeListeHaplotype
+        // On garde les haplotypes dans une liste chainée TypeListeHaplotype et les paires explicatives dans TypeListePairesExplicatives
         l = 0;
         g = nbHaploTotaux;
         l = (nbHaploTotaux + nbHaploExplicatif - 1);
         for (i=0 ; i<(nbHaploExplicatif) ; i++) {
+        	pPE = pfic -> tetePairesExplicatives;
+    		pPE -> suiv = NULL;
         	if (i < (nbHaploExplicatif/2)) {
         	    pPE -> numHaplo1 = i + g;
+      			printf("pfic -> nomIndividu : %s\n", pfic -> nomIndividu);
         	    printf("pPE -> numHaplo1 : %d\n", pPE -> numHaplo1);
         	    pPE -> numHaplo2 = l;
         	    printf("pPE -> numHaplo2 : %d\n", pPE -> numHaplo2);
