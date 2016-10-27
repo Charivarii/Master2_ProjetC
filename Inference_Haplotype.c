@@ -11,6 +11,7 @@ typedef struct TypePaireExplicative* TypeListePairesExplicatives;
 typedef struct TypePaireExplicative {
 	int numHaplo1;
 	int numHaplo2;
+	double proba;
 	TypeListePairesExplicatives suiv;
 } TypePaireExplicative;
 
@@ -23,12 +24,34 @@ typedef struct TypeIndividu {
     TypeFichier suiv;
 } TypeIndividu;
 
+typedef struct TypeGenoExplicatif* TypeListeGenosExplicatifs;
+
+typedef struct TypeGenoExplicatif {
+    char* nomIndividu;
+    TypeListeGenosExplicatifs suiv;
+} TypeGenoExplicatif;
+
+typedef struct TypeHaplotype* TypeListeHaplotypes;
+
+typedef struct TypeHaplotype {
+    int numHaplo;
+    int* haplotype;
+    int cpt_haplo;
+    double freq;
+    TypeListeGenosExplicatifs teteGenosExplicatifs;
+    TypeListeHaplotypes suiv;
+} TypeHaplotype;
+
 /*
  *##### FONCTIONS #####
  */
 
 void recupererParametres(int nbArgument, char* listeArguments[], char** adr_fichier, char** adr_nbIndividu, char** adr_tailleGeno) {
-
+		
+		printf("############################################\n");
+		printf("Début de la fonction recupererParametres\n");
+		printf("############################################\n");
+		
     //DEBUT
     if (nbArgument != 4) {
         printf("Au lancement du programme, vous devez rentrer 3 paramètres : \n");
@@ -47,6 +70,10 @@ void recupererParametres(int nbArgument, char* listeArguments[], char** adr_fich
 
 
 void recupererDonneesFichier(TypeFichier tete, int tailleGeno, int nbIndividu, char* fichier) {
+
+		printf("############################################\n");
+		printf("Début de la fonction recupererDonneesFichier\n");
+		printf("############################################\n");
 
     // Variables locales
     int i = 0;
@@ -69,6 +96,7 @@ void recupererDonneesFichier(TypeFichier tete, int tailleGeno, int nbIndividu, c
         ptr = tete;
         ptr -> nomIndividu = (char*)malloc(sizeof(char)*20);
         ptr -> genotype = (int*)malloc(tailleGeno*sizeof(int));
+        ptr -> tetePairesExplicatives = (TypePaireExplicative*)malloc(sizeof(TypePaireExplicative));
         ptr -> suiv = NULL;
 
         do {
@@ -79,6 +107,7 @@ void recupererDonneesFichier(TypeFichier tete, int tailleGeno, int nbIndividu, c
 	                ptr = ptr -> suiv;
 	                ptr -> nomIndividu = (char*)malloc(sizeof(char)*20);
 	                ptr -> genotype = (int*)malloc(tailleGeno*sizeof(int));
+	                ptr -> tetePairesExplicatives = (TypePaireExplicative*)malloc(sizeof(TypePaireExplicative));
 	                ptr -> suiv = NULL;
 	                i++;
 	                estNomIndividu = 1;
@@ -103,6 +132,10 @@ void recupererDonneesFichier(TypeFichier tete, int tailleGeno, int nbIndividu, c
 
 void afficherListe(TypeFichier tete, int tailleGeno) {
 
+	printf("############################################\n");
+	printf("Début de la fonction afficherListe\n");
+	printf("############################################\n");
+
     // Variables locales
     TypeFichier p;
     int i;
@@ -123,7 +156,11 @@ void afficherListe(TypeFichier tete, int tailleGeno) {
 }
 
 
-void predictionEspaceRestraintHaplotypes(TypeFichier tete, int tailleGeno, int nbIndividu) {
+int predictionEspaceRestraintHaplotypes(TypeFichier tete, int tailleGeno, int nbIndividu, TypeListeHaplotypes ptrListeHaplo) {
+
+	printf("############################################\n");
+	printf("Début de la fonction predictionEspaceRestraintHaplotypes\n");
+	printf("############################################\n");
 
     // Variables locales
     int i = 0;
@@ -131,12 +168,15 @@ void predictionEspaceRestraintHaplotypes(TypeFichier tete, int tailleGeno, int n
     int j = 0;
     int t = 0;
     int s = 0;
+    int l = 0;
+    int nbHaploTotaux = 0;
     int pas = 0;
     int multiplicateur = 0;
     int nbDeux = 0;
     int nbHaploExplicatif = 0;
-    TypeFichier p;
+    TypeFichier pfic;
     int** tabTemp;
+    TypeListeHaplotypes pHaplo;
 
     //DEBUT
     // Allocation mémoire initiale pour le tableau temporaire qui contiendra les paires d'haplotypes possibles permettant d'expliquer le génotype d'un individu
@@ -145,12 +185,20 @@ void predictionEspaceRestraintHaplotypes(TypeFichier tete, int tailleGeno, int n
             tabTemp[i] = (int*)malloc(sizeof(int));
         }
     // Parcours de la liste pour récupérer les génotypes et prédire l'espace restaint des haplotypes
-    p = tete;
-    while (p != NULL) { // Pour chaque individu
+    pfic = tete;
+    
+    // Initialisation de la liste qui contiendra tous les haplotypes explicatifs
+        pHaplo = ptrListeHaplo;
+        pHaplo -> haplotype = (int*)malloc(sizeof(int)*tailleGeno);
+        pHaplo -> freq = 0.0;
+        pHaplo -> teteGenosExplicatifs = (TypeGenoExplicatif*)malloc(sizeof(TypeGenoExplicatif));
+        pHaplo -> suiv = NULL;
+    
+    while (pfic != NULL) { // Pour chaque individu
         // On compte le nombre de 2 dans le génotype
         nbDeux = 0;
         for (i=0 ; i<tailleGeno ; i++) {
-            if (p -> genotype[i] == 2) {
+            if (pfic -> genotype[i] == 2) {
                 nbDeux++;
             }
         }
@@ -167,11 +215,11 @@ void predictionEspaceRestraintHaplotypes(TypeFichier tete, int tailleGeno, int n
         // Génération des paires d'haplotypes expliquant le génotype
         k = 0; // k : nombre de deux rencontrés jusqu'à maintenant
         for (i=0 ; i<tailleGeno ; i++) { // Parcours du génotype d'un individu
-        	if (p -> genotype[i] == 1) {
+        	if (pfic -> genotype[i] == 1) {
         		for (j=0 ; j<nbHaploExplicatif ; j++) {
         			tabTemp[i][j] = 1;
         		}
-        	} else if (p -> genotype[i] == 0) {
+        	} else if (pfic -> genotype[i] == 0) {
         		for (j=0 ; j<nbHaploExplicatif ; j++) {
         			tabTemp[i][j] = 0;
         		}
@@ -193,27 +241,96 @@ void predictionEspaceRestraintHaplotypes(TypeFichier tete, int tailleGeno, int n
         }
 
         // Affichage des haplotypes générés
-        for (i=0 ; i<nbHaploExplicatif ; i++) { // Parcours du génotype d'un individu
+        /*for (i=0 ; i<nbHaploExplicatif ; i++) { // Parcours du génotype d'un individu
         	printf("\n%d : \n", i);
         	for (j=0 ; j<tailleGeno ; j++) {
         			printf("%d", tabTemp[j][i]);
         	}
         	printf("\n");
         }
-        printf("############################################\n");
+        printf("1############################################\n");*/
+        
+        // On garde les haplotypes dans une liste chainée TypeListeHaplotype
+        
+        for (i=0 ; i<(nbHaploExplicatif) ; i++) {
+        	
+        	pHaplo -> numHaplo = nbHaploTotaux;
+        	pHaplo -> cpt_haplo = 1;
+        	
+        	for (j=0 ; j<tailleGeno ; j++) {
+        		pHaplo -> haplotype[j] = tabTemp[j][i];
+        	}
+        	
+        	if (pfic -> suiv != NULL || i != (nbHaploExplicatif - 1)) {
+        		pHaplo -> suiv = (TypeHaplotype*)malloc(sizeof(TypeHaplotype));
+        		pHaplo = pHaplo -> suiv;
+        		pHaplo -> haplotype = (int*)malloc(sizeof(int)*tailleGeno);
+        		pHaplo -> freq = 0.0;
+        		pHaplo -> teteGenosExplicatifs = (TypeGenoExplicatif*)malloc(sizeof(TypeGenoExplicatif));
+        		pHaplo -> suiv = NULL;
+        	}
+        	
+        	nbHaploTotaux++;
+        }
+        printf("2############################################\n");
+          
+        /*for (i=0 ; i<(nbHaploExplicatif/2) ; i++) {
+        	l = nbHaploExplicatif - 1;
+        	for (j=0 ; j<tailleGeno ; j++) {
+        		
+        			printf("tabTemp[j][i] : %d\n", tabTemp[j][i]);
+        			printf("tabTemp[j][l] : %d\n", tabTemp[j][l]);
+        	}
+        	l--;
+        	printf("\n");
+        }
+        printf("############################################\n");*/
 
-        p=p->suiv;
+        pfic = pfic -> suiv;
     }
 
     // Libération de la mémoire
     for (i=0 ; i<tailleGeno ; i++) {
         free(tabTemp[i]);
     }
-    free(tabTemp);
+    free(tabTemp); 
+	
+	return nbHaploTotaux;
+    //FIN
+}
 
 
-    
+void initialisation_freq_haplotype (TypeListeHaplotypes tete, int nb_haplo, int tailleGeno){
+	
+    // Variables locales
+	double freqCalc;
+	int i;
+	TypeListeHaplotypes p;
 
+    //DEBUT
+    p = tete;
+	freqCalc=(1.0/nb_haplo);
+	//parcour de la liste des haplotype 
+	while(p != NULL ){
+		//on rempli la valeur de la frequence
+		p -> freq = freqCalc;
+		p = p -> suiv;
+	}	
+	// Affichage de la liste des haplotypes explicatifs
+	printf("\n*************\n");
+	printf("Affichage de la liste des haplotypes\n");
+	printf("\n*************\n");
+	p = tete;
+	while (p != NULL) {
+		printf("numHaplo : %d\n", p->numHaplo);
+		for (i=0; i<tailleGeno ; i++) {
+			printf("%d", p -> haplotype[i]);
+		}
+		printf("\ncpt_haplo : %d\n", p->cpt_haplo);
+		printf("freq : %le\n", p->freq);
+		printf("\n*************\n");
+		p=p->suiv;
+	}
     //FIN
 }
 
@@ -224,11 +341,18 @@ void predictionEspaceRestraintHaplotypes(TypeFichier tete, int tailleGeno, int n
 
 int main(int argc, char* argv[]) {
 
+	printf("############################################\n");
+	printf("Début du programme Inference_Haplotype\n");
+	printf("############################################\n");
+
     //VARIABLE
+    int nbHaploTotaux;
     char* fichier;
     char* nbIndividu;
     char* tailleGeno;
     TypeFichier ptrFichier;
+    TypeListeHaplotypes ptrListeHaplo;
+    TypeListePairesExplicatives ptrPairesExplicatives;
 
     //DEBUT
 
@@ -250,9 +374,19 @@ int main(int argc, char* argv[]) {
     afficherListe(ptrFichier, atoi(tailleGeno));
 
     // Prédiction de l'espace restraint des haplotypes expliquant les génotypes
-    predictionEspaceRestraintHaplotypes(ptrFichier, atoi(tailleGeno), atoi(nbIndividu));
+    ptrListeHaplo = (TypeHaplotype*)malloc(sizeof(TypeHaplotype));
+    if(ptrListeHaplo==NULL){
+        printf("L'allocation mémoire a échoué\n");
+        exit(1);
+    }
+    
+    nbHaploTotaux = predictionEspaceRestraintHaplotypes(ptrFichier, atoi(tailleGeno), atoi(nbIndividu), ptrListeHaplo);
+    
+    // On ajoute dans la liste des haplotypes la fréquence initiale
+    initialisation_freq_haplotype(ptrListeHaplo, nbHaploTotaux, atoi(tailleGeno));
 
     free(ptrFichier);
+    free(ptrListeHaplo);
     return 0;
     // FIN
 }
