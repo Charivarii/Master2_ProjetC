@@ -11,7 +11,6 @@ typedef struct TypePaireExplicative* TypeListePairesExplicatives;
 typedef struct TypePaireExplicative {
 	int numHaplo1;
 	int numHaplo2;
-	double proba;
 	TypeListePairesExplicatives suiv;
 } TypePaireExplicative;
 
@@ -20,6 +19,8 @@ typedef struct TypeIndividu* TypeFichier;
 typedef struct TypeIndividu {
     char* nomIndividu;
     int* genotype;
+    double proba;
+    int cpt;
     TypeListePairesExplicatives tetePairesExplicatives;
     TypeFichier suiv;
 } TypeIndividu;
@@ -37,7 +38,7 @@ typedef struct TypeHaplotype* TypeListeHaplotypes;
 typedef struct TypeHaplotype {
     int numHaplo;
     int* haplotype;
-    int cpt_haplo;
+    int cpt;
     double freq;
     TypeListeGenosExplicatifs teteGenosExplicatifs;
     TypeListeHaplotypes suiv;
@@ -46,6 +47,33 @@ typedef struct TypeHaplotype {
 /*
  *##### FONCTIONS #####
  */
+void insertionTete(int numHaplo, TypeListeGenosExplicatifs* adr_teteGE, char* nomIndividu, TypeListePairesExplicatives tetePE) {
+
+	//VARIABLES LOCALES
+	TypeListeGenosExplicatifs p_new = (TypeGenoExplicatif*)malloc(sizeof(TypeGenoExplicatif));
+	TypeListePairesExplicatives ptr = (TypePaireExplicative*)malloc(sizeof(TypePaireExplicative));
+
+	//DEBUT
+	printf("Dedans\n");
+	/*p_new -> nomIndividu = nomIndividu;
+	while (ptr != NULL) {
+		if (numHaplo == ptr -> numHaplo1) {
+			p_new -> numHaplo2 = ptr -> numHaplo2;
+			p_new -> suiv = *adr_teteGE;
+			*adr_teteGE = p_new;
+			break;
+		}
+		if (numHaplo == ptr -> numHaplo2) {
+			p_new -> numHaplo2 = ptr -> numHaplo1;
+			p_new -> suiv = *adr_teteGE;
+			*adr_teteGE = p_new;
+			break;
+		}
+		ptr = ptr -> suiv;
+	}*/
+}
+
+
 
 void recupererParametres(int nbArgument, char* listeArguments[], char** adr_fichier, char** adr_nbIndividu, char** adr_tailleGeno) {
 		
@@ -95,7 +123,9 @@ void recupererDonneesFichier(TypeFichier tete, int tailleGeno, int nbIndividu, c
         ptr = tete;
         ptr -> nomIndividu = (char*)malloc(sizeof(char)*20);
         ptr -> genotype = (int*)malloc(tailleGeno*sizeof(int));
-        ptr -> tetePairesExplicatives = (TypePaireExplicative*)malloc(sizeof(TypePaireExplicative));
+        ptr -> proba = 0.0;
+        ptr -> cpt = 1;
+        ptr -> tetePairesExplicatives = NULL;
         ptr -> suiv = NULL;
 
         do {
@@ -106,7 +136,9 @@ void recupererDonneesFichier(TypeFichier tete, int tailleGeno, int nbIndividu, c
 	                ptr = ptr -> suiv;
 	                ptr -> nomIndividu = (char*)malloc(sizeof(char)*20);
 	                ptr -> genotype = (int*)malloc(tailleGeno*sizeof(int));
-	                ptr -> tetePairesExplicatives = (TypePaireExplicative*)malloc(sizeof(TypePaireExplicative));
+	                ptr -> proba = 0.0;
+        			ptr -> cpt = 1;
+	                ptr -> tetePairesExplicatives = NULL;
 	                ptr -> suiv = NULL;
 	                i++;
 	                estNomIndividu = 1;
@@ -124,31 +156,6 @@ void recupererDonneesFichier(TypeFichier tete, int tailleGeno, int nbIndividu, c
             }
 
         } while (c[0] != EOF);
-    }
-    //FIN
-}
-
-
-void afficherListe(TypeFichier tete, int tailleGeno) {
-
-	printf("\nDébut de la fonction afficherListe\n");
-	printf("############################################\n\n");
-
-    // Variables locales
-    TypeFichier p;
-    int i;
-
-    //DEBUT
-    printf("Affichage de la liste contenant les génotypes de chaque individu\n");
-    printf("************************\n");
-    p = tete;
-    while (p != NULL) {
-        printf("nom : %s\ngenotype : ", p->nomIndividu);
-        for (i=0; i<tailleGeno ; i++) {
-            printf("%d", p-> genotype[i]);
-        }
-        printf("\n************************\n");
-        p=p->suiv;
     }
     //FIN
 }
@@ -190,6 +197,7 @@ int predictionEspaceRestraintHaplotypes(TypeFichier tete, int tailleGeno, int nb
         pHaplo = ptrListeHaplo;
         pHaplo -> haplotype = (int*)malloc(sizeof(int)*tailleGeno);
         pHaplo -> freq = 0.0;
+        pHaplo -> cpt = 1;
         pHaplo -> teteGenosExplicatifs = (TypeGenoExplicatif*)malloc(sizeof(TypeGenoExplicatif));
         pHaplo -> suiv = NULL;
     
@@ -245,17 +253,14 @@ int predictionEspaceRestraintHaplotypes(TypeFichier tete, int tailleGeno, int nb
         g = nbHaploTotaux;
         l = (nbHaploTotaux + nbHaploExplicatif - 1);
 
-        printf("Affichage de la liste Paires d'haplotypes explicatifs\n");
-        printf("************************\n");
+     	// On remplit la structure des paires explicatives pour chaque génotype
+        pfic -> tetePairesExplicatives = (TypePaireExplicative*)malloc(sizeof(TypePaireExplicative));
+        pPE = pfic -> tetePairesExplicatives;
+    	pPE -> suiv = NULL;
         for (i=0 ; i<(nbHaploExplicatif) ; i++) {
-        	pPE = pfic -> tetePairesExplicatives;
-    		pPE -> suiv = NULL;
         	if (i < (nbHaploExplicatif/2)) {
         	    pPE -> numHaplo1 = i + g;
-      			printf("pfic -> nomIndividu : %s\n", pfic -> nomIndividu);
-        	    printf("pPE -> numHaplo1 : %d\n", pPE -> numHaplo1);
         	    pPE -> numHaplo2 = l;
-        	    printf("pPE -> numHaplo2 : %d\n", pPE -> numHaplo2);
         	    l--;
         	    if (i != (nbHaploExplicatif/2 - 1)) {
         	        pPE -> suiv = (TypePaireExplicative*)malloc(sizeof(TypePaireExplicative));
@@ -265,7 +270,11 @@ int predictionEspaceRestraintHaplotypes(TypeFichier tete, int tailleGeno, int nb
         	}
         	
         	pHaplo -> numHaplo = nbHaploTotaux;
-        	pHaplo -> cpt_haplo = 1;
+        	// Appelle de la fonction de redondance
+
+        	// On remplit la structure genoExplicatif, insertion en tete
+        	printf("Avant fonction\n");
+        	//insertionTete(pHaplo -> numHaplo, &pHaplo -> teteGenosExplicatifs, pfic -> nomIndividu, pfic -> tetePairesExplicatives);
         	
         	for (j=0 ; j<tailleGeno ; j++) {
         		pHaplo -> haplotype[j] = tabTemp[j][i];
@@ -276,6 +285,7 @@ int predictionEspaceRestraintHaplotypes(TypeFichier tete, int tailleGeno, int nb
         		pHaplo = pHaplo -> suiv;
         		pHaplo -> haplotype = (int*)malloc(sizeof(int)*tailleGeno);
         		pHaplo -> freq = 0.0;
+        		pHaplo -> cpt = 1;
         		pHaplo -> teteGenosExplicatifs = (TypeGenoExplicatif*)malloc(sizeof(TypeGenoExplicatif));
         		pHaplo -> suiv = NULL;
         	}
@@ -315,24 +325,69 @@ void initialisation_freq_haplotype (TypeListeHaplotypes tete, int nb_haplo, int 
 		//on rempli la valeur de la frequence
 		p -> freq = freqCalc;
 		p = p -> suiv;
-	}	
-	// Affichage de la liste des haplotypes explicatifs
-	printf("Affichage de la liste des haplotypes\n");
-	printf("************************\n");
-	p = tete;
-	while (p != NULL) {
-		printf("numHaplo : %d\n", p->numHaplo);
-		for (i=0; i<tailleGeno ; i++) {
-			printf("%d", p -> haplotype[i]);
-		}
-		printf("\ncpt_haplo : %d\n", p->cpt_haplo);
-		printf("freq : %le\n", p->freq);
-		p=p->suiv;
-		printf("************************\n");
 	}
 	
     //FIN
 }
+
+
+void afficherListeTypeFichier(TypeFichier teteGeno, TypeListeHaplotypes teteHaplo, int tailleGeno) {
+
+	printf("\nDébut de la fonction afficherListe\n");
+	printf("############################################\n\n");
+
+    // Variables locales
+    TypeFichier pGeno;
+    TypeListeHaplotypes pHaplo;
+    TypeListePairesExplicatives pPE;
+    TypeListeGenosExplicatifs pGE;
+    int i;
+    //DEBUT
+    printf("Affichage de la liste contenant les génotypes de chaque individu\n");
+    printf("********************************************************************\n");
+    pGeno = teteGeno;
+    while (pGeno != NULL) {
+        printf("nom : %s\ngenotype : ", pGeno->nomIndividu);
+        for (i=0; i<tailleGeno ; i++) {
+            printf("%d", pGeno-> genotype[i]);
+        }
+        printf("\nproba : %le\n", pGeno->proba);
+        printf("cpt : %d\n", pGeno->cpt);
+        printf("\nAffichage des paires explicatives\n");
+        pPE = pGeno -> tetePairesExplicatives;
+        while (pPE != NULL) {
+        	printf("numHaplo1 : %d\n", pPE -> numHaplo1);
+        	printf("numHaplo2 : %d\n", pPE -> numHaplo2);
+        	pPE = pPE -> suiv;
+        }
+        printf("********************************************************************\n");
+        pGeno=pGeno->suiv;
+    }
+
+    printf("\nAffichage de la liste contenant les haplotypes de l'espace restraint\n");
+    printf("********************************************************************\n");
+    pHaplo = teteHaplo;
+	while (pHaplo != NULL) {
+		printf("numHaplo : %d\nhaplotype : ", pHaplo->numHaplo);
+        for (i=0; i<tailleGeno ; i++) {
+            printf("%d", pHaplo-> haplotype[i]);
+        }
+        printf("\nfreq : %le\n", pHaplo->freq);
+        printf("cpt : %d\n", pHaplo->cpt);
+        printf("\nAffichage des genotypes expliquant l'haplotype\n");
+        pGE = pHaplo -> teteGenosExplicatifs;
+        while (pGE != NULL) {
+        	printf("nomIndividu : %s\n", pGE -> nomIndividu);
+        	printf("numHaplo2 : %d\n", pGE -> numHaplo2);
+        	pGE = pGE -> suiv;
+        }
+        printf("********************************************************************\n");
+        pHaplo=pHaplo->suiv;
+	}
+
+    //FIN
+}
+
 
 /*
  *##### MAIN #####
@@ -367,9 +422,6 @@ int main(int argc, char* argv[]) {
     }
 
     recupererDonneesFichier(ptrFichier, atoi(tailleGeno), atoi(nbIndividu), fichier);
-    
-    // Afficher les données présentes dans le fichier
-    afficherListe(ptrFichier, atoi(tailleGeno));
 
     // Prédiction de l'espace restraint des haplotypes expliquant les génotypes
     ptrListeHaplo = (TypeHaplotype*)malloc(sizeof(TypeHaplotype));
@@ -382,6 +434,9 @@ int main(int argc, char* argv[]) {
     
     // On ajoute dans la liste des haplotypes la fréquence initiale
     initialisation_freq_haplotype(ptrListeHaplo, nbHaploTotaux, atoi(tailleGeno));
+
+    // Afficher les données des structures
+    afficherListeTypeFichier(ptrFichier, ptrListeHaplo, atoi(tailleGeno));
 
     free(ptrFichier);
     free(ptrListeHaplo);
