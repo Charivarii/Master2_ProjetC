@@ -51,11 +51,9 @@ void insertionTete(int numHaplo, TypeListeGenosExplicatifs* adr_teteGE, char* no
 
 	//VARIABLES LOCALES
 	TypeListeGenosExplicatifs p_new = (TypeGenoExplicatif*)malloc(sizeof(TypeGenoExplicatif));
-	TypeListePairesExplicatives ptr = (TypePaireExplicative*)malloc(sizeof(TypePaireExplicative));
-
+	TypeListePairesExplicatives ptr = tetePE;
 	//DEBUT
-	printf("Dedans\n");
-	/*p_new -> nomIndividu = nomIndividu;
+	p_new -> nomIndividu = nomIndividu;
 	while (ptr != NULL) {
 		if (numHaplo == ptr -> numHaplo1) {
 			p_new -> numHaplo2 = ptr -> numHaplo2;
@@ -70,7 +68,33 @@ void insertionTete(int numHaplo, TypeListeGenosExplicatifs* adr_teteGE, char* no
 			break;
 		}
 		ptr = ptr -> suiv;
-	}*/
+	}
+}
+
+
+//mettre atoi appele fct pour taille geno
+int recherche_redondance_haplo(TypeListeHaplotypes tete, int tailleGeno, int* tab) {
+	TypeListeHaplotypes p = tete;
+	int identique, i;
+
+	while (p != NULL) { //parcours la liste 
+		identique=0;
+		for (i=0 ; i<tailleGeno ; i++) {
+			if (tab[i] == p -> haplotype[i]) {
+				identique++;
+				printf("identique : %d\n", identique);
+			} else {
+				printf("sortie\n");
+				break;
+			}
+		}
+		if (identique == tailleGeno) {
+			p -> cpt++;
+			return 1;
+		}
+		p = p -> suiv;
+	}
+	return 0;
 }
 
 
@@ -179,7 +203,9 @@ int predictionEspaceRestraintHaplotypes(TypeFichier tete, int tailleGeno, int nb
     int multiplicateur = 0;
     int nbDeux = 0;
     int nbHaploExplicatif = 0;
+    int estRedondant = 0;
     TypeFichier pfic;
+    int* vecTemp;
     int** tabTemp;
     TypeListeHaplotypes pHaplo;
     TypeListePairesExplicatives pPE;
@@ -268,29 +294,46 @@ int predictionEspaceRestraintHaplotypes(TypeFichier tete, int tailleGeno, int nb
         	        pPE -> suiv = NULL;
         	    }
         	}
-        	
-        	pHaplo -> numHaplo = nbHaploTotaux;
-        	// Appelle de la fonction de redondance
 
-        	// On remplit la structure genoExplicatif, insertion en tete
-        	printf("Avant fonction\n");
-        	//insertionTete(pHaplo -> numHaplo, &pHaplo -> teteGenosExplicatifs, pfic -> nomIndividu, pfic -> tetePairesExplicatives);
-        	
+        	vecTemp = (int*)malloc(sizeof(int)*(tailleGeno));
         	for (j=0 ; j<tailleGeno ; j++) {
-        		pHaplo -> haplotype[j] = tabTemp[j][i];
+        		vecTemp[j] = tabTemp[j][i];
         	}
-        	
-        	if (pfic -> suiv != NULL || i != (nbHaploExplicatif - 1)) {
-        		pHaplo -> suiv = (TypeHaplotype*)malloc(sizeof(TypeHaplotype));
-        		pHaplo = pHaplo -> suiv;
-        		pHaplo -> haplotype = (int*)malloc(sizeof(int)*tailleGeno);
-        		pHaplo -> freq = 0.0;
-        		pHaplo -> cpt = 1;
-        		pHaplo -> teteGenosExplicatifs = (TypeGenoExplicatif*)malloc(sizeof(TypeGenoExplicatif));
-        		pHaplo -> suiv = NULL;
+
+        	// Appelle de la fonction de redondance
+        	if (nbHaploTotaux != 0) {
+		        estRedondant = recherche_redondance_haplo(ptrListeHaplo, tailleGeno, vecTemp);
+		        printf("estRedondant : %d\n", estRedondant);
+		    }
+        	if (!estRedondant) {
+        		pHaplo -> numHaplo = nbHaploTotaux;
+        		for (j=0 ; j<tailleGeno ; j++) {
+        			pHaplo -> haplotype[j] = vecTemp[j];
+        		}
+
+        		// On remplit la structure genoExplicatif, insertion en tete
+	        	insertionTete(pHaplo -> numHaplo, &pHaplo -> teteGenosExplicatifs, pfic -> nomIndividu, pfic -> tetePairesExplicatives);
+	        	
+	        	if (pfic -> suiv != NULL || i != (nbHaploExplicatif - 1)) {
+	        		pHaplo -> suiv = (TypeHaplotype*)malloc(sizeof(TypeHaplotype));
+	        		pHaplo = pHaplo -> suiv;
+	        		pHaplo -> haplotype = (int*)malloc(sizeof(int)*tailleGeno);
+	        		pHaplo -> freq = 0.0;
+	        		pHaplo -> cpt = 1;
+	        		pHaplo -> teteGenosExplicatifs = (TypeGenoExplicatif*)malloc(sizeof(TypeGenoExplicatif));
+	        		pHaplo -> suiv = NULL;
+	        	}
+
+	        	nbHaploTotaux++;
+
+        	} else {
+
+        		printf("redondant\n");
+
         	}
+
+        	free(vecTemp);
         	
-        	nbHaploTotaux++;
         }
 
         pfic = pfic -> suiv;
@@ -376,6 +419,7 @@ void afficherListeTypeFichier(TypeFichier teteGeno, TypeListeHaplotypes teteHapl
         printf("cpt : %d\n", pHaplo->cpt);
         printf("\nAffichage des genotypes expliquant l'haplotype\n");
         pGE = pHaplo -> teteGenosExplicatifs;
+        printf("pGE : %d\n", pGE);
         while (pGE != NULL) {
         	printf("nomIndividu : %s\n", pGE -> nomIndividu);
         	printf("numHaplo2 : %d\n", pGE -> numHaplo2);
