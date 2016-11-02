@@ -70,6 +70,12 @@ double calcul_proba (TypeListePairesExplicatives pPE, TypeListeHaplotypes teteHa
 
 void afficherListes(TypeFichier teteGeno, TypeListeHaplotypes teteHaplo, int tailleGeno);
 
+void algoEM(TypeFichier pfic, TypeListeHaplotypes pHaplo, int nbEtapeMax, int nbIndividu, int tailleGeno);
+
+void maximisation (int nbTotInd, TypeFichier teteFichier, TypeListeHaplotypes teteHaplo);
+
+double estimation_esperance(TypeFichier teteFichier, TypeListeHaplotypes teteHaplo);
+
 
 /*
  *##### MAIN #####
@@ -82,6 +88,7 @@ int main(int argc, char* argv[]) {
     printf("############################################\n\n");
 
     //VARIABLE
+    int nbEtapeMax = 20;
     int nbHaploTotaux;
     char* fichier;
     char* nbIndividu;
@@ -119,6 +126,12 @@ int main(int argc, char* argv[]) {
 
     // Pour chaque genotype g on calcul la probabilité du génotype
 	calcul_proba_genotype(ptrFichier, ptrListeHaplo);
+
+    // Afficher les données des structures
+    afficherListes(ptrFichier, ptrListeHaplo, atoi(tailleGeno));
+
+    // Début de l'agorithme itératif EM
+    algoEM(ptrFichier, ptrListeHaplo, nbEtapeMax, atoi(nbIndividu), atoi(tailleGeno));
 
     // Afficher les données des structures
     afficherListes(ptrFichier, ptrListeHaplo, atoi(tailleGeno));
@@ -553,9 +566,6 @@ void initialisation_freq_haplotype(TypeListeHaplotypes tete, int nb_haplo, int t
 
 
 void calcul_proba_genotype(TypeFichier teteFichier, TypeListeHaplotypes teteHaplo) {
-	printf("\n#################################\n");
-	printf("Début de la fonction calcul_proba_genotype\n");
-	printf("\n#################################\n");
 
 	//VARIABLES LOCALES
 	double proba = 0.0;
@@ -574,9 +584,6 @@ void calcul_proba_genotype(TypeFichier teteFichier, TypeListeHaplotypes teteHapl
 
 
 double calcul_proba (TypeListePairesExplicatives pPE, TypeListeHaplotypes teteHaplo) {
-	printf("\n#################################\n");
-	printf("Début de la fonction calcul_proba\n");
-	printf("\n#################################\n");
 
 	//VARIABLES LOCALES
 	double proba = 0.0;
@@ -610,7 +617,7 @@ double calcul_proba (TypeListePairesExplicatives pPE, TypeListeHaplotypes teteHa
 		}
 		proba += p_part;
 		pPaireHaplo = pPaireHaplo -> suiv;
-	}//fin parcour la liste de paire d'haplotype
+	}//fin parcours la liste de paire d'haplotype
 	return(proba);
 	//FIN
 }
@@ -670,4 +677,117 @@ void afficherListes(TypeFichier teteGeno, TypeListeHaplotypes teteHaplo, int tai
     }
 
     //FIN
+}
+
+
+
+void algoEM(TypeFichier pfic, TypeListeHaplotypes pHaplo, int nbEtapeMax, int nbIndividu, int tailleGeno) {
+
+	//VARIABLES LOCALES
+	double log_likelihood, log_likelihood_prec;
+	double seuil = 0.001;
+	int convergence = 0; //La convergence est à faux}
+	int nbEtape = 0;
+
+	//DEBUT
+	log_likelihood_prec = 0;
+	log_likelihood = 0;
+
+	while (convergence != 1 && nbEtape < nbEtapeMax) {
+		maximisation(nbIndividu, pfic,  pHaplo);
+		log_likelihood = estimation_esperance(pfic, pHaplo);
+		printf("log_likelihood_prec : %le\n", log_likelihood_prec);
+		printf("log_likelihood : %le\n", log_likelihood);
+		printf("fabs(log_likelihood_prec - log_likelihood) : %le\n", fabs(log_likelihood_prec - log_likelihood));
+		printf("fabs(log_likelihood_prec - log_likelihood) < seuil : %d\n", (fabs(log_likelihood_prec - log_likelihood)) < seuil);
+		if ((fabs(log_likelihood_prec - log_likelihood)) < seuil) {//si convergence
+			convergence = 1;
+		} else {
+			log_likelihood_prec = log_likelihood;
+		}
+		nbEtape++;
+
+		// Afficher les données des structures
+    	//afficherListes(pfic, pHaplo, tailleGeno);
+
+	}
+	printf("convergence : %d\n", convergence);
+	printf("nbEtape : %d\n", nbEtape);
+	//FIN
+}
+
+
+
+void maximisation (int nbIndividu, TypeFichier teteFichier, TypeListeHaplotypes teteHaplo) {
+
+	//VARIABLES LOCALES
+	int idHaplo1, idHaplo2;
+	double Ng, N, freq, freq_prec_H1, freq_prec_H2, prob_prec, contribution;
+	TypeFichier pInd = teteFichier;
+	TypeListeGenosExplicatifs pGE;
+	TypeListeHaplotypes pHaplo1 = teteHaplo;
+	TypeListeHaplotypes pHaplo2 = teteHaplo;
+
+	N = (double)nbIndividu;
+	//DEBUT
+	while (pHaplo1 != NULL) { //parcours la liste d'haplotype
+		idHaplo1 = pHaplo1 -> numHaplo;
+		freq_prec_H1 = pHaplo1 -> freq;
+		freq = 0.0;
+		pGE = pHaplo1 -> teteGenosExplicatifs;
+		while (pGE != NULL) { //parcours liste de genotype correspondant à un haplotype pour récuperer H2
+			idHaplo2 = pGE -> numHaplo2;
+			pHaplo2 = teteHaplo; 
+			while (pHaplo2 != NULL) {
+				if (idHaplo2 == pHaplo2 -> numHaplo) {
+					freq_prec_H2 = pHaplo2 -> freq;
+					break;
+				}
+				pHaplo2 = pHaplo2 -> suiv;
+			}//fin du second parcours de la liste d'haplotype
+
+			pInd = teteFichier; //Pour récupérer Ng et prob_prec
+			while (pInd != NULL) {
+				if (strcmp(pGE -> nomIndividu, pInd -> nomIndividu) == 0) {
+					Ng = (double)pInd -> cpt;
+					prob_prec = pInd -> proba;
+					break;
+				}
+				pInd = pInd -> suiv;
+			}
+			if (idHaplo1 == idHaplo2){//calcul de la contribution en fonction de l'homozygotie ou l'hétérozygotie
+				contribution = ( ( (2*pow(freq_prec_H1, 2)) / (prob_prec) ) * (Ng/N) );
+			} else {
+				contribution = ( ( (2*(freq_prec_H1+freq_prec_H2)) / (prob_prec) ) * (Ng/N) );
+			}
+			freq += contribution;
+			pGE = pGE -> suiv;	
+		}//fin de la boucle parcourant la liste de génotype
+
+		freq = freq/2;
+		pHaplo1 -> freq = freq;
+		pHaplo1 = pHaplo1 -> suiv;
+	}//fin de la boucle paracoruant la liste d'haplotype
+	//FIN
+}
+
+
+
+double estimation_esperance(TypeFichier teteFichier, TypeListeHaplotypes teteHaplo) {
+
+	//VARIABLES LOCALES
+	double log_likelihood = 0.0;
+	double proba = 0.0;
+	TypeFichier pInd = teteFichier;
+
+	//DEBUT
+	while (pInd != NULL) {//parcours la liste de genotype
+		proba = calcul_proba(pInd -> tetePairesExplicatives, teteHaplo);
+		pInd -> proba = proba;
+		printf("log(proba) : %le\n", log(proba));
+		log_likelihood += (pInd -> cpt) * log(proba);
+		pInd = pInd -> suiv;
+	}//fin parcours la liste de genotype
+	return log_likelihood;
+	//FIN
 }
