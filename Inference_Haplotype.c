@@ -256,7 +256,7 @@ int predictionEspaceRestraintHaplotypes(TypeFichier tete, int tailleGeno, int nb
     int t = 0;
     int s = 0;
     int l = 0;
-    int g = 0;
+    int identique1, identique2;
     int nbHaploTotaux = 0;
     int pas = 0;
     int multiplicateur = 0;
@@ -265,8 +265,9 @@ int predictionEspaceRestraintHaplotypes(TypeFichier tete, int tailleGeno, int nb
     int estRedondant = 0;
     TypeFichier pfic;
     int* vecTemp;
+    int* vecTempHaplo2;
     int** tabTemp;
-    TypeListeHaplotypes pHaplo;
+    TypeListeHaplotypes pHaplo, pHaplopPE;
     TypeListePairesExplicatives pPE;
 
     //DEBUT
@@ -329,44 +330,27 @@ int predictionEspaceRestraintHaplotypes(TypeFichier tete, int tailleGeno, int nb
         }
         
         // On garde les haplotypes dans une liste chainée TypeListeHaplotype et les paires explicatives dans TypeListePairesExplicatives
-        l = 0;
-        g = nbHaploTotaux;
-        l = (nbHaploTotaux + nbHaploExplicatif - 1);
 
-        // On remplit la structure des paires explicatives pour chaque génotype
-        pfic -> tetePairesExplicatives = (TypePaireExplicative*)malloc(sizeof(TypePaireExplicative));
-        pPE = pfic -> tetePairesExplicatives;
-        pPE -> suiv = NULL;
+        // On remplit la liste chainée regroupant tous les haplotypes de l'espace restreint des solutions
+        printf("nbHaploExplicatif : %d\n", nbHaploExplicatif);
         for (i=0 ; i<(nbHaploExplicatif) ; i++) {
-            /*if (i < (nbHaploExplicatif/2)) {
-                pPE -> numHaplo1 = i + g;
-                pPE -> numHaplo2 = l;
-                l--;
-                if (i != (nbHaploExplicatif/2 - 1)) {
-                    pPE -> suiv = (TypePaireExplicative*)malloc(sizeof(TypePaireExplicative));
-                    pPE = pPE -> suiv;
-                    pPE -> suiv = NULL;
-                }
-            }*/
+
             vecTemp = (int*)malloc(sizeof(int)*(tailleGeno));
+            
             for (j=0 ; j<tailleGeno ; j++) {
                 vecTemp[j] = tabTemp[j][i];
             }
 
-            //####### A REVOIR #####
             // Appelle de la fonction de redondance
             if (nbHaploTotaux != 0) {
                 estRedondant = recherche_redondance_haplo(ptrListeHaplo, tailleGeno, vecTemp);
-                printf("estRedondant : %d\n", estRedondant);
             }
             if (!estRedondant) {
             	if (nbHaploTotaux > 0) {
+            		pHaplo -> suiv = (TypeHaplotype*)malloc(sizeof(TypeHaplotype));
             		pHaplo = pHaplo -> suiv;
-            		printf("pseudo1\n");
             	}
-            	printf("1\n");
-            	pHaplo -> haplotype = (int*)malloc(sizeof(int)*tailleGeno);
-            	printf("2\n");
+            	pHaplo -> haplotype = (int*)malloc(sizeof(int)*(tailleGeno));
         		pHaplo -> freq = 0.0;
         		pHaplo -> cpt = 1;
         		pHaplo -> teteGenosExplicatifs = (TypeGenoExplicatif*)malloc(sizeof(TypeGenoExplicatif));
@@ -380,19 +364,63 @@ int predictionEspaceRestraintHaplotypes(TypeFichier tete, int tailleGeno, int nb
                 //####### A REVOIR #####
 
                 // On remplit la structure genoExplicatif, insertion en tete
-                //insertionTete(pHaplo -> numHaplo, &pHaplo -> teteGenosExplicatifs, pfic -> nomIndividu, pfic -> tetePairesExplicatives);
+                insertionTete(pHaplo -> numHaplo, &pHaplo -> teteGenosExplicatifs, pfic -> nomIndividu, pfic -> tetePairesExplicatives);
 
                 nbHaploTotaux++;
-
-            } else {
-
-    
 
             }
 
             free(vecTemp);
             
         }
+
+        // On initialise la liste chainée qui contiendra les structures avec les paires d'haplotypes explicatifs
+        pfic -> tetePairesExplicatives = (TypePaireExplicative*)malloc(sizeof(TypePaireExplicative));
+        pPE = pfic -> tetePairesExplicatives;
+        pPE -> suiv = NULL;
+
+        l = 0;
+        l = (nbHaploExplicatif - 1);
+
+        // On remplit la structure des paires explicatives pour chaque génotype
+        for (i=0 ; i<(nbHaploExplicatif/2) ; i++) {
+
+        	vecTemp = (int*)malloc(sizeof(int)*(tailleGeno));
+            vecTempHaplo2 = (int*)malloc(sizeof(int)*(tailleGeno));
+           	for (j=0 ; j<tailleGeno ; j++) {
+           		vecTemp[j] = tabTemp[j][i];
+               	vecTempHaplo2[j] = tabTemp[j][l];
+            }
+
+            if (i != 0) {
+            	pPE -> suiv = (TypePaireExplicative*)malloc(sizeof(TypePaireExplicative));
+                pPE = pPE -> suiv;
+                pPE -> suiv = NULL;
+            }
+            pHaplopPE = ptrListeHaplo;
+            while (pHaplopPE != NULL) {
+            	identique1 = 0;
+            	identique2 = 0;
+        		for (j=0 ; j<tailleGeno ; j++) {
+            		if (vecTemp[j] == pHaplopPE -> haplotype[j]) {
+                		identique1++;
+            		}
+            		if (vecTempHaplo2[j] == pHaplopPE -> haplotype[j]) {
+                		identique2++;
+            		}
+			    }
+			    if (identique1 == tailleGeno) {
+			        pPE -> numHaplo1 = pHaplopPE -> numHaplo;
+			    }
+			    if (identique2 == tailleGeno) {
+			        pPE -> numHaplo2 = pHaplopPE -> numHaplo;
+			    }
+            	pHaplopPE = pHaplopPE -> suiv;
+            }
+            free(vecTemp);
+           	free(vecTempHaplo2);
+           	l--;
+        } 
 
         pfic = pfic -> suiv;
     }
@@ -417,7 +445,8 @@ int recherche_redondance_haplo(TypeListeHaplotypes tete, int tailleGeno, int* ta
     int estRedondant = 0;
 
     //DEBUT
-    while (p != NULL && p -> suiv != NULL) { //parcours la liste
+    while (p != NULL) { //parcours la liste
+
         identique=0;
         for (i=0 ; i<tailleGeno ; i++) {
             if (tab[i] == p -> haplotype[i]) {
@@ -426,8 +455,8 @@ int recherche_redondance_haplo(TypeListeHaplotypes tete, int tailleGeno, int* ta
         }
         if (identique == tailleGeno) {
             p -> cpt++;
-
             estRedondant = 1;
+            break;
         }
         p = p -> suiv;
     }
