@@ -64,6 +64,10 @@ void insertionTete(TypeListeGenosExplicatifs* adr_teteGE, char* nomIndividu, int
 
 void initialisation_freq_haplotype (TypeListeHaplotypes tete, int nb_haplo, int tailleGeno);
 
+void calcul_proba_genotype(TypeFichier teteFichier, TypeListeHaplotypes teteHaplo);
+
+double calcul_proba (TypeListePairesExplicatives pPE, TypeListeHaplotypes teteHaplo);
+
 void afficherListes(TypeFichier teteGeno, TypeListeHaplotypes teteHaplo, int tailleGeno);
 
 
@@ -113,8 +117,8 @@ int main(int argc, char* argv[]) {
     // On ajoute dans la liste des haplotypes la fréquence initiale
     initialisation_freq_haplotype(ptrListeHaplo, nbHaploTotaux, atoi(tailleGeno));
 
-    // On remplit la structure avec les génotypes explicatifs
-    //genotypes_explicatifs();
+    // Pour chaque genotype g on calcul la probabilité du génotype
+	calcul_proba_genotype(ptrFichier, ptrListeHaplo);
 
     // Afficher les données des structures
     afficherListes(ptrFichier, ptrListeHaplo, atoi(tailleGeno));
@@ -211,10 +215,8 @@ void recupererDonneesFichier(TypeFichier tete, int tailleGeno, int nbIndividu, c
             } else {
                 if (estNomIndividu) {
                     ptr -> nomIndividu = strcat(ptr -> nomIndividu, c);
-                    printf("ptr -> nomIndividu : %s\n", ptr -> nomIndividu);
                 } else {
                     ptr -> genotype[j] = atoi(c);
-                    printf("ptr -> genotype[j] : %d\n", ptr -> genotype[j]);
                     j++;
                 }
             }
@@ -252,9 +254,6 @@ int recherche_redondance_geno(TypeFichier tete, int tailleGeno, int* tab) {
 
 
 int predictionEspaceRestraintHaplotypes(TypeFichier tete, int tailleGeno, int nbIndividu, TypeListeHaplotypes ptrListeHaplo) {
-
-    printf("\nDébut de la fonction predictionEspaceRestraintHaplotypes\n");
-    printf("############################################\n\n");
 
     //VARIABLES LOCALES
     int i = 0;
@@ -442,8 +441,6 @@ int predictionEspaceRestraintHaplotypes(TypeFichier tete, int tailleGeno, int nb
 
 
 void creation_listeGenoExplicatif(TypeListeHaplotypes ptrListeHaplo, TypeFichier tete) {
-	printf("#################################\n");
-	printf("Je suis dans la nouvelle fonction\n\n");
 
 	//VARIABLES LOCALES
 	int estPremierGenoExplicatif = 1;
@@ -458,7 +455,6 @@ void creation_listeGenoExplicatif(TypeListeHaplotypes ptrListeHaplo, TypeFichier
 		estPremierGenoExplicatif = 1;
 		pfic = tete;
 		while (pfic != NULL) {
-			printf("pfic -> nomIndividu : %s\n", pfic -> nomIndividu);
 			pPE = pfic -> tetePairesExplicatives;
 			while (pPE != NULL) {
 				if (pHaplo -> numHaplo == pPE -> numHaplo1) {
@@ -488,7 +484,6 @@ void creation_listeGenoExplicatif(TypeListeHaplotypes ptrListeHaplo, TypeFichier
 		pHaplo = pHaplo -> suiv;
 	}
 	//FIN
-	printf("#################################\n\n");
 }
 
 
@@ -553,6 +548,71 @@ void initialisation_freq_haplotype(TypeListeHaplotypes tete, int nb_haplo, int t
         p = p -> suiv;
     }  
     //FIN
+}
+
+
+
+void calcul_proba_genotype(TypeFichier teteFichier, TypeListeHaplotypes teteHaplo) {
+	printf("\n#################################\n");
+	printf("Début de la fonction calcul_proba_genotype\n");
+	printf("\n#################################\n");
+
+	//VARIABLES LOCALES
+	double proba = 0.0;
+	TypeFichier pInd;
+	pInd = teteFichier;
+
+	//DEBUT
+	while (pInd != NULL) {//parcours la liste de genotype
+		proba = calcul_proba(pInd -> tetePairesExplicatives, teteHaplo);
+		pInd -> proba = proba ;
+		pInd = pInd -> suiv;
+	}//fin parcours la liste de genotype
+	//FIN
+}
+
+
+
+double calcul_proba (TypeListePairesExplicatives pPE, TypeListeHaplotypes teteHaplo) {
+	printf("\n#################################\n");
+	printf("Début de la fonction calcul_proba\n");
+	printf("\n#################################\n");
+
+	//VARIABLES LOCALES
+	double proba = 0.0;
+	double p_part, freqH1, freqH2;
+	int idHaplo1, idHaplo2;
+	int idTrouve = 0;
+	TypeListePairesExplicatives pPaireHaplo = pPE;
+	TypeListeHaplotypes pHaplo = teteHaplo;
+
+	//DEBUT
+	while (pPaireHaplo!= NULL) {
+		/* 
+		 * parcours la liste de paire d'haplotype pour un génotype
+		 * on récupère les identifiantes des paires d'haplotypes correspondant au génotype
+		 */
+		idHaplo1 = pPaireHaplo -> numHaplo1;
+		idHaplo2 = pPaireHaplo -> numHaplo2;
+		pHaplo = teteHaplo;
+		while (pHaplo != NULL) { //parcours de la liste d'haplotype pour rechercher les freq correspondants a nos idhaplo
+			if (idHaplo1 == pHaplo -> numHaplo) { freqH1 = pHaplo -> freq; idTrouve++; }
+			if (idHaplo2 == pHaplo -> numHaplo) { freqH2 = pHaplo -> freq; idTrouve++; }
+			if (idTrouve == 2) {
+				break;
+			}
+			pHaplo = pHaplo -> suiv;
+		}
+		if (idHaplo1 == idHaplo2) {
+			p_part = pow(freqH1, 2);
+		} else {
+	 		p_part = 2*freqH1*freqH2;
+		}
+		proba += p_part;
+		pPaireHaplo = pPaireHaplo -> suiv;
+	}//fin parcour la liste de paire d'haplotype
+	return(proba);
+	//FIN
 }
 
 
