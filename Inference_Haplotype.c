@@ -56,9 +56,11 @@ int recherche_redondance_geno(TypeFichier tete, int tailleGeno, int* tab);
 
 int predictionEspaceRestraintHaplotypes(TypeFichier tete, int tailleGeno, int nbIndividu, TypeListeHaplotypes ptrListeHaplo);
 
-void insertionTete(int numHaplo, TypeListeGenosExplicatifs* adr_teteGE, char* nomIndividu, TypeListePairesExplicatives tetePE);
+void creation_listeGenoExplicatif(TypeListeHaplotypes ptrListeHaplo, TypeFichier tete);
 
 int recherche_redondance_haplo(TypeListeHaplotypes tete, int tailleGeno, int* tab);
+
+void insertionTete(TypeListeGenosExplicatifs* adr_teteGE, char* nomIndividu, int numHaplo);
 
 void initialisation_freq_haplotype (TypeListeHaplotypes tete, int nb_haplo, int tailleGeno);
 
@@ -111,6 +113,9 @@ int main(int argc, char* argv[]) {
     // On ajoute dans la liste des haplotypes la fréquence initiale
     initialisation_freq_haplotype(ptrListeHaplo, nbHaploTotaux, atoi(tailleGeno));
 
+    // On remplit la structure avec les génotypes explicatifs
+    //genotypes_explicatifs();
+
     // Afficher les données des structures
     afficherListes(ptrFichier, ptrListeHaplo, atoi(tailleGeno));
 
@@ -148,7 +153,7 @@ void recupererDonneesFichier(TypeFichier tete, int tailleGeno, int nbIndividu, c
     int i = 0;
     int j = 0;
     int estRedondant = 0;
-    int estNomIndividu = 0;
+    int estNomIndividu = 1;
     FILE* fp = NULL;
     char c[1];
     TypeFichier ptr;
@@ -204,10 +209,12 @@ void recupererDonneesFichier(TypeFichier tete, int tailleGeno, int nbIndividu, c
 
             //On a rencontré un caractère à garder donc on l'écrit soit dans le nom soit dans le génotype en fonction de la variable estNomindividu
             } else {
-                if (estNomIndividu) {   
+                if (estNomIndividu) {
                     ptr -> nomIndividu = strcat(ptr -> nomIndividu, c);
+                    printf("ptr -> nomIndividu : %s\n", ptr -> nomIndividu);
                 } else {
                     ptr -> genotype[j] = atoi(c);
+                    printf("ptr -> genotype[j] : %d\n", ptr -> genotype[j]);
                     j++;
                 }
             }
@@ -332,7 +339,6 @@ int predictionEspaceRestraintHaplotypes(TypeFichier tete, int tailleGeno, int nb
         // On garde les haplotypes dans une liste chainée TypeListeHaplotype et les paires explicatives dans TypeListePairesExplicatives
 
         // On remplit la liste chainée regroupant tous les haplotypes de l'espace restreint des solutions
-        printf("nbHaploExplicatif : %d\n", nbHaploExplicatif);
         for (i=0 ; i<(nbHaploExplicatif) ; i++) {
 
             vecTemp = (int*)malloc(sizeof(int)*(tailleGeno));
@@ -360,11 +366,6 @@ int predictionEspaceRestraintHaplotypes(TypeFichier tete, int tailleGeno, int nb
                 for (j=0 ; j<tailleGeno ; j++) {
                     pHaplo -> haplotype[j] = vecTemp[j];
                 }
-
-                //####### A REVOIR #####
-
-                // On remplit la structure genoExplicatif, insertion en tete
-                insertionTete(pHaplo -> numHaplo, &pHaplo -> teteGenosExplicatifs, pfic -> nomIndividu, pfic -> tetePairesExplicatives);
 
                 nbHaploTotaux++;
 
@@ -429,10 +430,65 @@ int predictionEspaceRestraintHaplotypes(TypeFichier tete, int tailleGeno, int nb
     for (i=0 ; i<tailleGeno ; i++) {
         free(tabTemp[i]);
     }
-    free(tabTemp); 
+    free(tabTemp);
+
+    // On remplit la structure genoExplicatif, insertion en tete
+    creation_listeGenoExplicatif(ptrListeHaplo, tete);
     
     return nbHaploTotaux;
     //FIN
+}
+
+
+
+void creation_listeGenoExplicatif(TypeListeHaplotypes ptrListeHaplo, TypeFichier tete) {
+	printf("#################################\n");
+	printf("Je suis dans la nouvelle fonction\n\n");
+
+	//VARIABLES LOCALES
+	int estPremierGenoExplicatif = 1;
+	TypeListeHaplotypes pHaplo;
+	TypeFichier pfic;
+	TypeListePairesExplicatives pPE;
+	pHaplo = ptrListeHaplo;
+
+
+	//DEBUT
+	while (pHaplo != NULL) {
+		estPremierGenoExplicatif = 1;
+		pfic = tete;
+		while (pfic != NULL) {
+			printf("pfic -> nomIndividu : %s\n", pfic -> nomIndividu);
+			pPE = pfic -> tetePairesExplicatives;
+			while (pPE != NULL) {
+				if (pHaplo -> numHaplo == pPE -> numHaplo1) {
+					if (estPremierGenoExplicatif) {
+						pHaplo -> teteGenosExplicatifs -> nomIndividu = pfic -> nomIndividu;
+						pHaplo -> teteGenosExplicatifs -> numHaplo2 = pPE -> numHaplo2;
+						pHaplo -> teteGenosExplicatifs -> suiv = NULL;
+						estPremierGenoExplicatif = 0;
+					} else {
+						insertionTete(&pHaplo -> teteGenosExplicatifs, pfic -> nomIndividu, pPE -> numHaplo2);
+					}
+				}
+				if (pHaplo -> numHaplo == pPE -> numHaplo2) {
+					if (estPremierGenoExplicatif) {
+						pHaplo -> teteGenosExplicatifs -> nomIndividu = pfic -> nomIndividu;
+						pHaplo -> teteGenosExplicatifs -> numHaplo2 = pPE -> numHaplo1;
+						pHaplo -> teteGenosExplicatifs -> suiv = NULL;
+						estPremierGenoExplicatif = 0;
+					} else {
+						insertionTete(&pHaplo -> teteGenosExplicatifs, pfic -> nomIndividu, pPE -> numHaplo1);
+					}
+				}
+				pPE = pPE -> suiv;
+			}
+			pfic = pfic -> suiv;
+		}
+		pHaplo = pHaplo -> suiv;
+	}
+	//FIN
+	printf("#################################\n\n");
 }
 
 
@@ -466,28 +522,17 @@ int recherche_redondance_haplo(TypeListeHaplotypes tete, int tailleGeno, int* ta
 
 
 
-void insertionTete(int numHaplo, TypeListeGenosExplicatifs* adr_teteGE, char* nomIndividu, TypeListePairesExplicatives tetePE) {
+void insertionTete(TypeListeGenosExplicatifs* adr_teteGE, char* nomIndividu, int numHaplo) {
 
     //VARIABLES LOCALES
     TypeListeGenosExplicatifs p_new = (TypeGenoExplicatif*)malloc(sizeof(TypeGenoExplicatif));
-    TypeListePairesExplicatives ptr = tetePE;
+
     //DEBUT
     p_new -> nomIndividu = nomIndividu;
-    while (ptr != NULL) {
-        if (numHaplo == ptr -> numHaplo1) {
-            p_new -> numHaplo2 = ptr -> numHaplo2;
-            p_new -> suiv = *adr_teteGE;
-            *adr_teteGE = p_new;
-            break;
-        }
-        if (numHaplo == ptr -> numHaplo2) {
-            p_new -> numHaplo2 = ptr -> numHaplo1;
-            p_new -> suiv = *adr_teteGE;
-            *adr_teteGE = p_new;
-            break;
-        }
-        ptr = ptr -> suiv;
-    }
+    p_new -> numHaplo2 = numHaplo;
+    p_new -> suiv = *adr_teteGE;
+	*adr_teteGE = p_new;
+   
 }
 
 
