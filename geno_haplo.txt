@@ -4,6 +4,3 @@
 /ind1 geno 02101
 /ind1 haplo1 01101
 /ind1 haplo2 00101
-/ind2 geno 00220
-/ind2 haplo1 00000
-/ind2 haplo2 00110
