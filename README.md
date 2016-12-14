@@ -4,7 +4,19 @@
 # UEs "Algorithmique et Programmation avancée pour les biologistes" et "Méthodes et algorithmes pour la bioinformatique"
 # Encadrement C. Sinoquet
 # Réalisé par Estelle Geffard et Léa Boulongne
-########################################################
+
+# Execution rapide
+###################
+
+- Execution du script bash :
+----------------------------
+
+Changer les valeurs des arguments dans le script <nbIndividu> <tailleGeno> <pcAmbiguite>
+gedit exe.sh
+
+Executer le script (si besoin changer les permissions accorder au script avec chmod 755 exe.sh)
+./exe.sh
+
 
 # Script Generation_Genotypes_Aleatoire.c
 #########################################
